@@ -1,0 +1,7 @@
+ARG_ENABLE('clientext', 'clientext support', 'no');
+
+if (PHP_CLIENTEXT != 'no') {
+	AC_DEFINE('HAVE_CLIENTEXT', 1, 'clientext support enabled');
+
+	EXTENSION('clientext', 'clientext.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
+}

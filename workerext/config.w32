@@ -1,0 +1,7 @@
+ARG_ENABLE('workerext', 'workerext support', 'no');
+
+if (PHP_WORKEREXT != 'no') {
+	AC_DEFINE('HAVE_WORKEREXT', 1, 'workerext support enabled');
+
+	EXTENSION('workerext', 'workerext.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
+}
