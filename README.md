@@ -37,7 +37,7 @@ cmake version 3.11.4
 ```
 首先需要安装msgpack php扩展。
 
-https://github.com/HughNian/nmid-php-ext.git
+git clone https://github.com/HughNian/nmid-php-ext.git
 
 1.client扩展
 cd nmid-php-ext/clientext
