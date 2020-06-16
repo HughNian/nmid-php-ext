@@ -53,6 +53,72 @@ make install
 
 ```
 
+## 使用
+
+```php
+工作端代码
+
+nmid调度服务端ip:192.168.1.176
+nmid调度服务端port:6808
+
+$worker = new WorkerExt();
+$worker->add_server("192.168.1.176", 6808);
+function GetOrderInfo($params) {
+    var_dump($params);
+    $arr = array('sn'=>'MBO22933822', 'user_id' => 1);
+    return json_encode($arr);
+}
+
+$worker->add_function('GetOrderInfo', function($params) {
+    var_dump($params);
+    return "goods goods very good";
+});
+
+$str = " is very best";
+$worker->add_function('ToUpper', function($params) use ($str) {
+    var_dump($params);
+    return strtoupper($params[0]) . $str;
+});
+
+$worker->add_function('PostInfo', function($params){
+    var_dump($params);
+    return "post ok";
+});
+
+//$worker->del_function('PostInfo');
+
+//$worker->add_function('GetOrderInfo', "GetOrderInfo");
+
+$worker->run();
+
+```
+
+```php
+客户端代码
+
+nmid调度服务端ip:192.168.1.176
+nmid调度服务端port:6808
+
+$host = "192.168.1.176";
+$port = 6808;
+
+$client = new ClientExt($host, $port);
+$client->connect();
+
+$params = msgpack_pack(array("name:niansong"));
+$client->dowork("PostInfo", $params, function($ret){
+	var_dump($ret);
+});
+
+$params2 = msgpack_pack(array("order_sn:MBO993889253", "order_type:4", "fenxiao:2288"));
+$client->dowork("GetOrderInfo", $params2, function($ret){
+	var_dump($ret);
+});
+
+$client->close();
+
+```
+
 <div align="center">
     <a href="http://www.niansong.top"><img src="https://raw.githubusercontent.com/HughNian/nmid-php-ext/master/logo/clientext_logo.png" alt="clientext"></a>
 </div>
