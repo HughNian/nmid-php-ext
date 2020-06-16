@@ -35,6 +35,8 @@ cmake version 3.11.4
 ## 编译安装步骤
 
 ```
+首先需要安装msgpack php扩展。
+
 https://github.com/HughNian/nmid-php-ext.git
 
 1.client扩展
