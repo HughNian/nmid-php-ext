@@ -16,10 +16,11 @@ nmid-php-ext是nmid微服务调度系统的客户端和工作端的php扩展实�
 ```
 cat /proc/version
 Linux version 3.10.0-957.21.3.el7.x86_64 ...(centos7)
+目前只支持linux环境
 
 php --version
 PHP 7.3.5 (cli) ( NTS )
-注意这里是NTS版的php，目前nmid-php-ext支持php7.3及以上NTS非线程安全版php。
+注意这里是NTS版的php，目前nmid-php-ext支持php7.3及以上NTS非线程安全版php，不支持ZTS线程安全版php。
 
 go version
 go1.12.5 linux/amd64
