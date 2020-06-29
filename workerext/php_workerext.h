@@ -3,6 +3,8 @@
 #ifndef PHP_WORKEREXT_H
 # define PHP_WORKEREXT_H
 
+#include "zend_exceptions.h"
+
 extern zend_module_entry workerext_module_entry;
 # define phpext_workerext_ptr &workerext_module_entry
 
@@ -26,7 +28,8 @@ ZEND_TSRMLS_CACHE_EXTERN()
 #endif
 
 ZEND_BEGIN_MODULE_GLOBALS(workerext)
-    struct _sHashTable *callbacks;
+struct _sHashTable *callbacks;
+zval *gzworker;
 ZEND_END_MODULE_GLOBALS(workerext)
 
 PHP_MINIT_FUNCTION(workerext);
@@ -44,6 +47,16 @@ extern int workerext_globals_id;
 extern zend_workerext_globals workerext_globals;
 #endif
 
+#ifndef GC_ADDREF
+#define GC_ADDREF(ref) ++GC_REFCOUNT(ref)
+#define GC_DELREF(ref) --GC_REFCOUNT(ref)
+#endif
+
+#ifndef ZEND_CLOSURE_OBJECT
+#define ZEND_CLOSURE_OBJECT(op_array) \
+	((zend_object*)((char*)(op_array) - sizeof(zend_object)))
+#endif
+
 static
 zval* n_zend_read_property(zend_class_entry *ce, zval *obj, const char *s, int len, int silent)
 {
@@ -57,5 +70,69 @@ zval* n_zend_read_property(zend_class_entry *ce, zval *obj, const char *s, int l
     return property;
 }
 
-#endif	/* PHP_WORKEREXT_H */
+static
+void n_zend_fci_cache_persist(zend_fcall_info_cache *fci_cache)
+{
+    if(fci_cache->object) {
+        GC_ADDREF(fci_cache->object);
+    }
+    if(fci_cache->function_handler->op_array.fn_flags & ZEND_ACC_CLOSURE) {
+        GC_ADDREF(ZEND_CLOSURE_OBJECT(fci_cache->function_handler));
+    }
+}
 
+static
+void n_zend_fci_cache_discard(zend_fcall_info_cache *fci_cache)
+{
+    if(fci_cache->object) {
+        OBJ_RELEASE(fci_cache->object);
+    }
+    if(fci_cache->function_handler->op_array.fn_flags & ZEND_ACC_CLOSURE) {
+        OBJ_RELEASE(ZEND_CLOSURE_OBJECT(fci_cache->function_handler));
+    }
+}
+
+static
+int n_zend_call_function_ex(zval *function_name, zend_fcall_info_cache *fci_cache, uint32_t param_count, zval *params, zval *retval)
+{
+    zend_fcall_info fci;
+    zval _retval;
+    int ret;
+
+    fci.size = sizeof(fci);
+    fci.object = NULL;
+    if(!fci_cache || !fci_cache->function_handler) {
+        if (!function_name) {
+            return FAILURE;
+        }
+        ZVAL_COPY_VALUE(&fci.function_name, function_name);
+    }
+    else {
+        ZVAL_UNDEF(&fci.function_name);
+    }
+    fci.retval = retval ? retval : &_retval;
+    fci.param_count = param_count;
+    fci.params = params;
+    fci.no_separation = 0;
+
+    ret = zend_call_function(&fci, fci_cache);
+
+    if(!retval) {
+        zval_ptr_dtor(&_retval);
+    }
+
+    return ret;
+}
+
+static
+int n_zend_call_function_ex2(zval *function_name, zend_fcall_info_cache *fci_cache, uint32_t param_count, zval *params, zval *retval)
+{
+    int ret = n_zend_call_function_ex(function_name, fci_cache, param_count, params, retval);
+    if (UNEXPECTED(EG(exception))) {
+        zend_exception_error(EG(exception), E_ERROR);
+    }
+
+    return ret;
+}
+
+#endif	/* PHP_WORKEREXT_H */
