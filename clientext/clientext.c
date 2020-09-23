@@ -70,7 +70,6 @@ RespCallback(Response *Res)
 	zval *cb = NULL;
 
 	fname = Res->handle;
-	printf("fname - %s\n", fname);
 	if(NULL == fname) {
 		php_error_docref(NULL, E_ERROR, "fname not found\n");
 
